@@ -1,0 +1,59 @@
+name: flutter_application_1
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.2.0  
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.3
+  google_fonts: ^6.2.1
+  shared_preferences: ^2.0.0
+  carousel_slider:
+    git:
+      url: https://github.com/serenader2014/flutter_carousel_slider.git
+      ref: master
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  syncfusion_flutter_signaturepad: ^25.1.37
+  
+
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logins.json
+    - assets/projeto.json
+    - img/sz_0.png
+    - img/sz_1.png
+    - img/911GTS_andamento.png
+    - img/revuelto_afazer.png
+    - img/especiale_andamento.png
+    - img/final_exterior_cinco.png
+    - img/final_exterior_dez.png
+    - img/final_exterior_dois.png
+    - img/final_exterior_nove.png
+    - img/final_exterior_oito.png
+    - img/final_exterior_onze.png
+    - img/final_exterior_quatro.png
+    - img/final_exterior_seis.png
+    - img/final_exterior_sete.png
+    - img/final_exterior_tres.png
+    - img/final_interior_cinco.png
+    - img/final_interior_quatro.png
+    - img/final_interior_seis.png
+    - img/final_interior_um.png
+    - img/final_interior_tres.png
+    - img/final.png
+    - img/final_dois.png
+    - img/final_um.png
+    - img/barra.png
+    - img/NissanAfazer.png
+    - img/szsem.png

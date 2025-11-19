@@ -1,0 +1,62 @@
+{
+  "projetos": [
+    {
+      "idProjeto": "917623",
+      "status": "A FAZER",
+      "fabricacao": "2026",
+      "potencia": "620 cv",
+      "aceleracao": "3.2 s",
+      "velMax": "320 km/h",
+      "fabricante": "Lamborghini",
+      "pais": "Itália",
+      "cor": "Vermelha",
+      "modelo": "Revuelto",
+      "imagem": "img/revuelto_afazer.png",
+      "mostrarAprovacao": true
+    },
+
+    {
+      "idProjeto": "553399",
+      "status": "A FAZER",
+      "fabricacao": "2025",
+      "potencia": "450 cv",
+      "aceleracao": "4.1 s",
+      "velMax": "280 km/h",
+      "fabricante": "Audi",
+      "pais": "Alemanha",
+      "cor": "Azul",
+      "modelo": "RS5",
+      "imagem": "img/NissanAfazer.png",
+      "mostrarAprovacao": true
+    },
+
+    {
+      "idProjeto": "615273",
+      "status": "EM ANDAMENTO",
+      "fabricacao": "2026",
+      "potencia": "541 cv",
+      "aceleracao": "3 s",
+      "velMax": "312 km/h",
+      "fabricante": "Porsche",
+      "pais": "Alemanha",
+      "cor": "Branca",
+      "modelo": "911 Carrera GTS",
+      "imagem": "img/911GTS_andamento.png",
+      "mostrarAprovacao": false
+    },
+    {
+      "idProjeto": "819202",
+      "status": "EM ANDAMENTO",
+      "fabricacao": "2015",
+      "potencia": "605 cv",
+      "aceleracao": "3.1 s",
+      "velMax": "325 km/h",
+      "fabricante": "Ferrari",
+      "pais": "Itália",
+      "cor": "Amarela",
+      "modelo": "458 Speciale Maranello",
+      "imagem": "img/especiale_andamento.png",
+      "mostrarAprovacao": false
+    }
+  ]
+}

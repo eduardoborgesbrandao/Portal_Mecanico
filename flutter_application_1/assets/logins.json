@@ -1,0 +1,32 @@
+{
+  "funcionarios": [
+    {
+      "idFunc": 1,
+      "idRG": 575987360,
+      "cep": "05030-000",
+      "numEnd": "145",
+      "compEnd": "Ap. 12 Bloco 1",
+      "nomeFunc": "Eduardo",
+      "cpf": 54687254510,
+      "dataNasc": "1999-06-04",
+      "email": "eduardo@portalsz.com",
+      "senha": "admin123",
+      "assinaturaBase64": "",
+      "pedidosAprovados": [1, 2]
+    },
+    {
+      "idFunc": 2,
+      "idRG": 594823970,
+      "cep": "05567-200",
+      "numEnd": "154",
+      "compEnd": "Casa Roxa",
+      "nomeFunc": "Marcus",
+      "cpf": 17498799237,
+      "dataNasc": "1988-10-24",
+      "email": "marcus.paulo@portalsz.com",
+      "senha": "mecanico123",
+      "assinaturaBase64": "",
+      "pedidosAprovados": []
+    }
+  ]
+}
