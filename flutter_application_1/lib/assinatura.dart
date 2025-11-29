@@ -125,7 +125,7 @@ class _AssinaturaState extends State<Assinatura> {
   @override
   Widget build(BuildContext context) {
     final titulo =
-        widget.aprovado ? "Confirmar aprovação" : "Confirmar reprovação";
+        widget.aprovado ? "Confirmar" : "Confirmar";
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -138,7 +138,7 @@ class _AssinaturaState extends State<Assinatura> {
         children: [
           const SizedBox(height: 10),
           Text(
-            "Assine abaixo — usuário: ${widget.emailUsuario}",
+            "Assine abaixo",
             style: const TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 10),

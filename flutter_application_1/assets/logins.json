@@ -6,13 +6,23 @@
       "cep": "05030-000",
       "numEnd": "145",
       "compEnd": "Ap. 12 Bloco 1",
-      "nomeFunc": "Eduardo",
+      "nomeFunc": "Eduardo Souza",
       "cpf": 54687254510,
       "dataNasc": "1999-06-04",
+      "cargo": "gerente",
       "email": "eduardo@portalsz.com",
       "senha": "admin123",
+
+      "telefone": "(11) 99414-5578",
+      "tempoAtuacao": "3 anos e 8 meses",
+      "projetosConcluidos": 18,
+      "projetosReprovados": 2,
+      "instagram": "@eduardo_souzamec",
+      "facebook": "eduardo.souza.mec",
+      "avaliacao": 4.5,
+
       "assinaturaBase64": "",
-      "pedidosAprovados": [1, 2]
+      "pedidosAprovados": [1, 2, 4, 7]
     },
     {
       "idFunc": 2,
@@ -20,11 +30,21 @@
       "cep": "05567-200",
       "numEnd": "154",
       "compEnd": "Casa Roxa",
-      "nomeFunc": "Marcus",
+      "nomeFunc": "Marcus Paulo",
       "cpf": 17498799237,
       "dataNasc": "1988-10-24",
-      "email": "marcus.paulo@portalsz.com",
+      "cargo": "mecanico",
+      "email": "marcos.paulo@portalsz.com",
       "senha": "mecanico123",
+
+      "telefone": "(11) 91234-5678",
+      "tempoAtuacao": "1 ano e 3 meses",
+      "projetosConcluidos": 6,
+      "projetosReprovados": 1,
+      "instagram": "@marcusmec",
+      "facebook": "marcus.paulo.mec",
+      "avaliacao": 3.5,
+
       "assinaturaBase64": "",
       "pedidosAprovados": []
     }

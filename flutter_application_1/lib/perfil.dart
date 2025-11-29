@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'login.dart';
 
 class Perfil extends StatefulWidget {
   final String emailLogado;
@@ -23,8 +25,14 @@ class _PerfilState extends State<Perfil> {
   Future<void> _loadFuncionario() async {
     final raw = await rootBundle.loadString('assets/logins.json');
     final data = json.decode(raw) as Map<String, dynamic>;
+
     final funcs = (data['funcionarios'] as List).cast<Map<String, dynamic>>();
-    _func = funcs.firstWhere((f) => f['email'] == widget.emailLogado, orElse: () => {});
+
+    _func = funcs.firstWhere(
+      (f) => f['email'] == widget.emailLogado,
+      orElse: () => {},
+    );
+
     setState(() => _loading = false);
   }
 
@@ -40,8 +48,11 @@ class _PerfilState extends State<Perfil> {
     if (_func == null || _func!.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.black,
-        body: Center(
-          child: Text('Funcionário não encontrado', style: const TextStyle(color: Colors.white)),
+        body: const Center(
+          child: Text(
+            'Funcionário não encontrado',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       );
     }
@@ -54,6 +65,7 @@ class _PerfilState extends State<Perfil> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              /// TOPO COM BOTÃO DE VOLTAR E LOGOUT
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -61,72 +73,71 @@ class _PerfilState extends State<Perfil> {
                     icon: const Icon(Icons.close, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Icon(Icons.edit_note, color: Colors.white),
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    onPressed: () {
+                      html.window.localStorage.remove('emailLogado');
+                      html.window.localStorage.remove('cargo');
+
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const Login()),
+                        (_) => false,
+                      );
+                    },
+                  ),
                 ],
               ),
+
               const SizedBox(height: 16),
+
               const Icon(Icons.person, color: Colors.white, size: 70),
               const SizedBox(height: 8),
-              Text('${_func!['nomeFunc']}, Souza',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-              const Text('MECÂNICO', style: TextStyle(color: Colors.grey)),
+
+              /// NOME COMPLETO DO JSON
+              Text(
+                _func!['nomeFunc'],
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+
+              /// CARGO DO JSON
+              Text(
+                _func!['cargo'].toString().toUpperCase(),
+                style: const TextStyle(color: Colors.grey),
+              ),
+
               const SizedBox(height: 24),
 
-              _info('NOME COMPLETO', 'Marcos Silva de Andrade'),
-              _info('DATA DE NASCIMENTO', '31/01/1997'),
-              _info('TELEFONE/WHATSAPP', '(11) 91234-5678'),
+              /// INFORMAÇÕES DO PERFIL
+              _info('NOME COMPLETO', _func!['nomeFunc']),
+              _info('DATA DE NASCIMENTO', _func!['dataNasc']),
+              _info('TELEFONE/WHATSAPP', _func!['telefone']),
               _info('E-MAIL', _func!['email']),
-              _info('TEMPO DE ATUAÇÃO', '1 ano e 3 meses'),
-              _info('PROJETOS CONCLUÍDOS', '6'),
-              _info('PROJETOS APROVADOS', _func!['pedidosAprovados'].length.toString()),
-              _info('PROJETOS REPROVADOS', '1'),
+              _info('TEMPO DE ATUAÇÃO', _func!['tempoAtuacao']),
+              _info('PROJETOS CONCLUÍDOS', _func!['projetosConcluidos'].toString()),
+              _info('PROJETOS REPROVADOS', _func!['projetosReprovados'].toString()),
+
               const SizedBox(height: 20),
 
+              /// AVALIAÇÃO DINÂMICA
               const Align(
                 alignment: Alignment.centerLeft,
-                child: Text('AVALIAÇÕES',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 6),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Icon(Icons.star, color: Colors.white),
-                  Icon(Icons.star, color: Colors.white),
-                  Icon(Icons.star, color: Colors.white),
-                  Icon(Icons.star_half, color: Colors.white),
-                  Icon(Icons.star_border, color: Colors.white),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('REDES SOCIAIS',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 6),
-              const Row(
-                children: [
-                  Icon(Icons.camera_alt_outlined, color: Colors.white),
-                  SizedBox(width: 12),
-                  Icon(Icons.facebook, color: Colors.white),
-                ],
-              ),
-              const SizedBox(height: 30),
-
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  side: const BorderSide(color: Colors.white),
-                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                child: Text(
+                  'AVALIAÇÕES',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
-                child: const Text('EDITAR INFORMAÇÕES',
-                    style: TextStyle(color: Colors.white, letterSpacing: 0.5)),
               ),
+              const SizedBox(height: 6),
+
+              Row(
+                children: _buildStars(_func!['avaliacao']),
+              ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -134,17 +145,44 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
+  /// Builder para criar linhas de informações
   Widget _info(String titulo, String valor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(titulo,
-              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
-          Text(valor, style: const TextStyle(color: Colors.white, fontSize: 13)),
+          Text(
+            titulo,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+          Text(
+            valor,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
         ],
       ),
     );
+  }
+
+  /// Estrelas de avaliação dinâmicas
+  List<Widget> _buildStars(double rating) {
+    List<Widget> stars = [];
+
+    for (int i = 1; i <= 5; i++) {
+      if (rating >= i) {
+        stars.add(const Icon(Icons.star, color: Colors.white));
+      } else if (rating >= i - 0.5) {
+        stars.add(const Icon(Icons.star_half, color: Colors.white));
+      } else {
+        stars.add(const Icon(Icons.star_border, color: Colors.white));
+      }
+    }
+
+    return stars;
   }
 }

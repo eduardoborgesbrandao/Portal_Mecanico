@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:html' as html; 
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -28,6 +28,7 @@ class _LoginState extends State<Login> {
     super.initState();
     _loadUsuarios();
   }
+
 
   Future<void> _loadUsuarios() async {
     try {
@@ -58,6 +59,7 @@ class _LoginState extends State<Login> {
     }
   }
 
+ 
   Future<void> _carregarProjetosNoLocalStorage() async {
     try {
       print('[Login] carregando assets/projeto.json...');
@@ -65,22 +67,16 @@ class _LoginState extends State<Login> {
 
       html.window.localStorage['projetos'] = raw;
 
-      print('[Login] projetos salvos no localStorage com sucesso!');
+      print('[Login] projetos salvos no localStorage!');
     } catch (e, s) {
       print('[Login] ERRO ao carregar projetos.json: $e');
       print(s);
     }
   }
 
+
   Future<void> _fazerLogin() async {
     if (!_formKey.currentState!.validate()) return;
-
-    if (!_usuariosCarregados) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aguarde o carregamento dos usuários...')),
-      );
-      return;
-    }
 
     setState(() => _isLoading = true);
 
@@ -90,7 +86,7 @@ class _LoginState extends State<Login> {
 
       print('[Login] Tentando login: $email');
 
-      await Future.delayed(const Duration(milliseconds: 500)); // animação loader
+      await Future.delayed(const Duration(milliseconds: 400));
 
       final usuario = _usuarios.firstWhere(
         (u) =>
@@ -102,7 +98,15 @@ class _LoginState extends State<Login> {
       if (usuario.isNotEmpty) {
         print('[Login] LOGIN OK → $usuario');
 
+        html.window.localStorage['cargo'] =
+            usuario['cargo'].toString().toLowerCase();
+        html.window.localStorage['emailLogado'] =
+            usuario['email'].toString().toLowerCase();
+
+        if (html.window.localStorage['projetos'] == null ||
+        html.window.localStorage['projetos']!.isEmpty) {
         await _carregarProjetosNoLocalStorage();
+        }
 
         if (!mounted) return;
         setState(() => _isLoading = false);
@@ -196,8 +200,8 @@ class _LoginState extends State<Login> {
                       decoration: inputDeco.copyWith(
                         hintText: 'Senha',
                         suffixIcon: IconButton(
-                          onPressed: () => setState(
-                              () => _senhaVisivel = !_senhaVisivel),
+                          onPressed: () =>
+                              setState(() => _senhaVisivel = !_senhaVisivel),
                           icon: Icon(
                             _senhaVisivel
                                 ? Icons.visibility

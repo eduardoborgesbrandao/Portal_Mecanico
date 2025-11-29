@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:html' as html; 
+import 'dart:html' as html;
 import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -12,7 +11,9 @@ import 'maisdetalhes.dart';
 import 'a_fazer.dart';
 
 class Homologacao extends StatefulWidget {
-  const Homologacao({super.key});
+  final String? idInicial;
+
+  const Homologacao({Key? key, this.idInicial}) : super(key: key);
 
   @override
   State<Homologacao> createState() => _HomologacaoState();
@@ -21,15 +22,17 @@ class Homologacao extends StatefulWidget {
 class _HomologacaoState extends State<Homologacao> {
   List<Projeto> _projetos = [];
   List<Projeto> _projetosFiltrados = [];
+  List<Map<String, dynamic>> _todosProjetos = [];
+  List<Map<String, dynamic>> _sugestoes = [];
+
   bool _loading = true;
   bool _vazio = false;
 
   int _index = 0;
 
-  
   final GlobalKey _repaintKeyFinal = GlobalKey();
   List<Offset?> _pointsFinal = [];
-  bool _desenhando = false; 
+  bool _desenhando = false;
 
   @override
   void initState() {
@@ -41,6 +44,7 @@ class _HomologacaoState extends State<Homologacao> {
     setState(() {
       _loading = true;
       _vazio = false;
+      _sugestoes = [];
     });
 
     try {
@@ -48,14 +52,19 @@ class _HomologacaoState extends State<Homologacao> {
       if (raw == null || raw.isEmpty) {
         _projetos = [];
         _projetosFiltrados = [];
+        _todosProjetos = [];
         _vazio = true;
-        _loading = false;
-        setState(() {});
+        setState(() => _loading = false);
         return;
       }
 
       final decoded = json.decode(raw);
       final List list = decoded["projetos"] ?? [];
+
+      _todosProjetos = list.map<Map<String, dynamic>>((e) {
+        if (e is Map) return Map<String, dynamic>.from(e);
+        return <String, dynamic>{};
+      }).toList();
 
       final loaded = list.map((j) {
         try {
@@ -65,16 +74,34 @@ class _HomologacaoState extends State<Homologacao> {
         }
       }).whereType<Projeto>().toList();
 
-      _projetos = loaded.where((p) => p.status.toUpperCase() == "HOMOLOGAÇÃO").toList();
+      _projetos = loaded.where((p) => p.status.toString().toUpperCase().contains('HOMOLOG')).toList();
       _projetosFiltrados = List.from(_projetos);
 
+      if (widget.idInicial != null && widget.idInicial!.trim().isNotEmpty) {
+        final idNorm = widget.idInicial!.trim();
+        final pos = _projetos.indexWhere((p) => p.idProjeto.toString().trim() == idNorm);
+        if (pos != -1) {
+          _index = pos;
+        } else {
+          final found = _todosProjetos.firstWhere(
+            (m) => (m['idProjeto']?.toString() ?? '').trim() == idNorm,
+            orElse: () => {},
+          );
+          if (found.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _navigateToSection(found);
+            });
+          }
+        }
+      }
+
       if (_projetosFiltrados.isEmpty) _vazio = true;
-    } catch (_) {
-      _vazio = true; 
+    } catch (e, st) {
+      debugPrint('[Homologacao] erro: $e\n$st');
+      _vazio = true;
     }
 
-    _loading = false;
-    setState(() {});
+    setState(() => _loading = false);
   }
 
   void _ajustarIndex() {
@@ -87,36 +114,43 @@ class _HomologacaoState extends State<Homologacao> {
     }
   }
 
+  // busca global
   void _filtrar(String value) {
-    value = value.trim();
+    final q = value.trim();
+    if (q.isEmpty) {
+      setState(() => _sugestoes = []);
+      return;
+    }
+
+    final resultados = _todosProjetos.where((item) {
+      try {
+        final id = item['idProjeto']?.toString() ?? '';
+        final modelo = item['modelo']?.toString() ?? '';
+        return id.contains(q) || modelo.toLowerCase().contains(q.toLowerCase());
+      } catch (_) {
+        return false;
+      }
+    }).toList();
+
     setState(() {
-      _projetosFiltrados = _projetos
-          .where((p) =>
-              p.idProjeto.contains(value) ||
-              p.modelo.toLowerCase().contains(value.toLowerCase()))
-          .toList();
-      _index = 0;
-      _ajustarIndex();
+      _sugestoes = resultados.map((e) => Map<String, dynamic>.from(e)).take(8).toList();
     });
   }
 
+  // assinatura final painter stuff (mantive sua lógica)
   Widget _campoAssinaturaFinal() {
     return Listener(
       onPointerDown: (details) {
         _desenhando = true;
-
         final box = _repaintKeyFinal.currentContext!.findRenderObject() as RenderBox;
         final localPos = box.globalToLocal(details.position);
-
         _pointsFinal.add(localPos);
         setState(() {});
       },
       onPointerMove: (details) {
         if (!_desenhando) return;
-
         final box = _repaintKeyFinal.currentContext!.findRenderObject() as RenderBox;
         final localPos = box.globalToLocal(details.position);
-
         _pointsFinal.add(localPos);
         setState(() {});
       },
@@ -130,36 +164,24 @@ class _HomologacaoState extends State<Homologacao> {
         child: Container(
           height: 180,
           width: double.infinity,
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 226, 225, 225),
-            border: Border.all(color: Colors.black54),
-          ),
-          child: CustomPaint(
-            painter: _SignaturePainter(_pointsFinal),
-            child: const SizedBox.expand(),
-          ),
+          decoration: BoxDecoration(color: const Color.fromARGB(255, 226, 225, 225), border: Border.all(color: Colors.black54)),
+          child: CustomPaint(painter: _SignaturePainter(_pointsFinal), child: const SizedBox.expand()),
         ),
       ),
     );
   }
 
   void _limparAssinaturaFinal() {
-    setState(() {
-      _pointsFinal = [];
-    });
+    setState(() => _pointsFinal = []);
   }
 
   Future<String?> _capturarAssinaturaFinalBase64() async {
     if (_pointsFinal.isEmpty) return null;
-
     try {
-      final boundary =
-          _repaintKeyFinal.currentContext!.findRenderObject() as RenderRepaintBoundary;
-
+      final boundary = _repaintKeyFinal.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final pngBytes = byteData!.buffer.asUint8List();
-
       return base64Encode(pngBytes);
     } catch (e) {
       return null;
@@ -168,17 +190,13 @@ class _HomologacaoState extends State<Homologacao> {
 
   Future<void> _finalizarHomologacao(String idProjeto) async {
     if (_pointsFinal.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Assine no campo antes de finalizar!")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Assine no campo antes de finalizar!")));
       return;
     }
 
     final assinaturaBase64 = await _capturarAssinaturaFinalBase64();
     if (assinaturaBase64 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erro ao gerar assinatura.")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao gerar assinatura.")));
       return;
     }
 
@@ -191,11 +209,10 @@ class _HomologacaoState extends State<Homologacao> {
     for (int i = 0; i < lista.length; i++) {
       final item = Map<String, dynamic>.from(lista[i]);
 
-      if (item["idProjeto"] == idProjeto) {
+      if ((item["idProjeto"]?.toString() ?? '') == idProjeto) {
         item["assinaturaFinal"] = assinaturaBase64;
         item["status"] = "CONCLUÍDO";
         item["dataHomologacao"] = DateTime.now().toIso8601String();
-
         lista[i] = item;
         break;
       }
@@ -206,41 +223,52 @@ class _HomologacaoState extends State<Homologacao> {
     _limparAssinaturaFinal();
     await _loadProjetos();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Homologação concluída!")),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Homologação concluída!")));
+  }
+
+  void _navigateToSection(Map<String, dynamic> item) {
+    final idStr = (item['idProjeto']?.toString() ?? '').trim();
+    if (idStr.isEmpty) return;
+    final status = (item['status']?.toString() ?? '').trim().toUpperCase();
+
+    if (status.contains('A FAZER')) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AFazer(idInicial: idStr)));
+      return;
+    }
+    if (status.contains('ANDAMENTO')) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Andamento(idInicial: idStr)));
+      return;
+    }
+    if (status.contains('HOMOLOG')) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => Homologacao(idInicial: idStr)));
+      return;
+    }
   }
 
   Widget _imgBase64(String base64str) {
     if (base64str.isEmpty) {
-      return const Text(
-        "Nenhuma assinatura.",
-        style: TextStyle(color: Colors.white54),
-      );
+      return const Text("Nenhuma assinatura.", style: TextStyle(color: Colors.white54));
     }
 
     try {
       String raw = base64str.contains(",") ? base64str.split(",").last : base64str;
       final bytes = base64Decode(raw);
 
-      return Container(
-        width: 260,
-        height: 120,
-        decoration: BoxDecoration(border: Border.all(color: Colors.white70)),
-        child: Image.memory(bytes, fit: BoxFit.contain),
-      );
+      return Container(width: 260, height: 120, decoration: BoxDecoration(border: Border.all(color: Colors.white70)), child: Image.memory(bytes, fit: BoxFit.contain));
     } catch (e) {
       return const Text("Assinatura inválida", style: TextStyle(color: Colors.red));
     }
   }
 
+  void _abrirSugestao(Map<String, dynamic> item) {
+    setState(() => _sugestoes = []);
+    _navigateToSection(item);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
-      );
+      return const Scaffold(backgroundColor: Colors.black, body: Center(child: CircularProgressIndicator(color: Colors.white)));
     }
 
     if (_vazio || _projetosFiltrados.isEmpty) {
@@ -250,39 +278,19 @@ class _HomologacaoState extends State<Homologacao> {
           child: Column(
             children: [
               const SizedBox(height: 10),
-              SizedBox(width: 340, height: 33, child: _barraPesquisa()),
-              const SizedBox(height: 15),
+              SizedBox(width: 340, height: 36, child: _barraPesquisa()),
+              const SizedBox(height: 12),
               _title(),
               const SizedBox(height: 20),
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    "Nenhum projeto em homologação",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ),
-
+              const Expanded(child: Center(child: Text("Nenhum projeto em homologação", style: TextStyle(color: Colors.white, fontSize: 16)))),
               Padding(
                 padding: const EdgeInsets.only(bottom: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.keyboard_arrow_up_outlined, color: Colors.white),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const Perfil(emailLogado: 'eduardo@portalsz.com')),
-                      ),
-                      icon: const Icon(Icons.person, color: Colors.white, size: 26),
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.keyboard_arrow_down_outlined, color: Colors.white),
-                    ),
+                    IconButton(onPressed: () {}, icon: const Icon(Icons.keyboard_arrow_up_outlined, color: Colors.white)),
+                    IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Perfil(emailLogado: 'eduardo@portalsz.com'))), icon: const Icon(Icons.person, color: Colors.white, size: 26)),
+                    IconButton(onPressed: () {}, icon: const Icon(Icons.keyboard_arrow_down_outlined, color: Colors.white)),
                   ],
                 ),
               ),
@@ -303,61 +311,64 @@ class _HomologacaoState extends State<Homologacao> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                physics: _desenhando
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(),
+                physics: _desenhando ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 15),
                 child: Column(
                   children: [
                     const SizedBox(height: 10),
-                    SizedBox(width: 340, height: 33, child: _barraPesquisa()),
+                    SizedBox(width: 340, height: 36, child: _barraPesquisa()),
+                    const SizedBox(height: 8),
+
+                    if (_sugestoes.isNotEmpty)
+                      Container(
+                        width: 340,
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        decoration: BoxDecoration(color: const Color(0xFF333333), border: Border.all(color: Colors.white12)),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _sugestoes.length,
+                          itemBuilder: (_, i) {
+                            final item = _sugestoes[i];
+                            final img = (item['imagem']?.toString() ?? '');
+                            final id = (item['idProjeto']?.toString() ?? '');
+                            final status = (item['status']?.toString() ?? '');
+                            return ListTile(
+                              leading: img.isNotEmpty
+                                  ? Image.asset(img, width: 48, height: 36, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, color: Colors.white54))
+                                  : const Icon(Icons.image, color: Colors.white54),
+                              title: Text('ID $id', style: const TextStyle(color: Colors.white)),
+                              subtitle: Text(status, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                              onTap: () => _abrirSugestao(item),
+                            );
+                          },
+                        ),
+                      ),
+
                     const SizedBox(height: 10),
 
                     _title(),
-
                     const SizedBox(height: 25),
-
                     _info(p),
                     const SizedBox(height: 20),
-
                     _foto(p),
                     const SizedBox(height: 20),
-
                     _btnDetalhes(p),
-
                     const SizedBox(height: 30),
-
-                    const Text("Assinatura Administrador",
-                        style: TextStyle(color: Colors.white70)),
+                    const Text("Assinatura Administrador", style: TextStyle(color: Colors.white70)),
                     const SizedBox(height: 10),
                     _imgBase64(p.assinaturaAprovador),
-
                     const SizedBox(height: 35),
-
-                    const Text("Assinatura Final",
-                        style: TextStyle(color: Colors.white70)),
+                    const Text("Assinatura Final", style: TextStyle(color: Colors.white70)),
                     const SizedBox(height: 12),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: _campoAssinaturaFinal(),
-                    ),
-
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 32), child: _campoAssinaturaFinal()),
                     const SizedBox(height: 10),
-                    TextButton(
-                      onPressed: _limparAssinaturaFinal,
-                      child: const Text("Limpar Assinatura",
-                          style: TextStyle(color: Colors.white70)),
-                    ),
-
+                    TextButton(onPressed: _limparAssinaturaFinal, child: const Text("Limpar Assinatura", style: TextStyle(color: Colors.white70))),
                     if (p.assinaturaFinal.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      const Text("Assinatura Final (registrada):",
-                          style: TextStyle(color: Colors.white70)),
+                      const Text("Assinatura Final (registrada):", style: TextStyle(color: Colors.white70)),
                       const SizedBox(height: 8),
                       _imgBase64(p.assinaturaFinal),
                     ],
-
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -378,46 +389,23 @@ class _HomologacaoState extends State<Homologacao> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _index =
-                      (_index - 1 + _projetosFiltrados.length) % _projetosFiltrados.length;
-                });
-              },
-              icon: const Icon(Icons.keyboard_arrow_up_outlined,
-                  color: Colors.white),
-            ),
-            IconButton(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        const Perfil(emailLogado: "eduardo@portalsz.com"))),
-              icon: const Icon(Icons.person, color: Colors.white, size: 28),
-            ),
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _index = (_index + 1) % _projetosFiltrados.length;
-                });
-              },
-              icon: const Icon(Icons.keyboard_arrow_down_outlined,
-                  color: Colors.white),
-            ),
+            IconButton(onPressed: () {
+              setState(() {
+                _index = (_index - 1 + _projetosFiltrados.length) % _projetosFiltrados.length;
+              });
+            }, icon: const Icon(Icons.keyboard_arrow_up_outlined, color: Colors.white)),
+            IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Perfil(emailLogado: "eduardo@portalsz.com"))), icon: const Icon(Icons.person, color: Colors.white, size: 28)),
+            IconButton(onPressed: () {
+              setState(() {
+                _index = (_index + 1) % _projetosFiltrados.length;
+              });
+            }, icon: const Icon(Icons.keyboard_arrow_down_outlined, color: Colors.white)),
           ],
         ),
         const SizedBox(height: 10),
         SizedBox(
           width: 260,
-          child: ElevatedButton(
-            style: _btnStyle(),
-            onPressed: () => _finalizarHomologacao(p.idProjeto),
-            child: const Text(
-              "FINALIZAR HOMOLOGAÇÃO",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
+          child: ElevatedButton(style: _btnStyle(), onPressed: () => _finalizarHomologacao(p.idProjeto), child: const Text("FINALIZAR HOMOLOGAÇÃO", style: TextStyle(color: Colors.white))),
         ),
       ],
     );
@@ -427,41 +415,15 @@ class _HomologacaoState extends State<Homologacao> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const Andamento()),
-            );
-          },
-        ),
-        const Text(
-          "HOMOLOGAÇÃO",
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        IconButton(
-          icon: const Icon(Icons.arrow_forward, color: Colors.white),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const AFazer()),
-            );
-          },
-        ),
+        IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Andamento()))),
+        const Text("HOMOLOGAÇÃO", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        IconButton(icon: const Icon(Icons.arrow_forward, color: Colors.white), onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AFazer()))),
       ],
     );
   }
 
   Widget _foto(Projeto p) {
-    return Image.asset(
-      p.imagem,
-      height: 240,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) =>
-          const Icon(Icons.error, color: Colors.redAccent),
-    );
+    return Image.asset(p.imagem, height: 240, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.error, color: Colors.redAccent));
   }
 
   Widget _info(Projeto p) {
@@ -484,39 +446,11 @@ class _HomologacaoState extends State<Homologacao> {
   }
 
   Widget _btnDetalhes(Projeto p) {
-    return SizedBox(
-      width: 200,
-      child: ElevatedButton(
-        style: _btnStyle(),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) =>
-                    Detalhes(idProjeto: p.idProjeto, modelo: p.modelo)),
-          );
-        },
-        child:
-            const Text("MAIS DETALHES", style: TextStyle(color: Colors.white)),
-      ),
-    );
+    return SizedBox(width: 200, child: ElevatedButton(style: _btnStyle(), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Detalhes(idProjeto: p.idProjeto, modelo: p.modelo))), child: const Text("MAIS DETALHES", style: TextStyle(color: Colors.white))));
   }
 
   Widget _linha(String t, String v) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(t,
-              style: const TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13)),
-          Text(v, style: const TextStyle(color: Colors.white, fontSize: 13)),
-        ],
-      ),
-    );
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(t, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 13)), Text(v, style: const TextStyle(color: Colors.white, fontSize: 13))]));
   }
 
   Widget _barraPesquisa() {
@@ -526,36 +460,19 @@ class _HomologacaoState extends State<Homologacao> {
       decoration: InputDecoration(
         hintText: "Pesquisar por ID",
         hintStyle: const TextStyle(color: Colors.white54, fontSize: 12),
-        prefixIcon: const Icon(Icons.search, color: Colors.white, size: 16),
-
+          prefixIcon: const Icon(Icons.search, color: Colors.white, size: 16),
         filled: true,
         fillColor: const Color.fromRGBO(80, 80, 80, 1),
-
         contentPadding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: Colors.white, width: 1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: Colors.white, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: Colors.white, width: 1),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: const BorderSide(color: Colors.white, width: 1)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: const BorderSide(color: Colors.white, width: 1)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: const BorderSide(color: Colors.white, width: 1)),
       ),
     );
   }
 
   ButtonStyle _btnStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: Colors.transparent,
-      side: const BorderSide(color: Colors.white, width: 1.2),
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-    );
+    return ElevatedButton.styleFrom(backgroundColor: Colors.transparent, side: const BorderSide(color: Colors.white, width: 1.2), padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)));
   }
 }
 
@@ -566,15 +483,10 @@ class _SignaturePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
+    final paint = Paint()..color = Colors.black..strokeWidth = 3..strokeCap = StrokeCap.round;
     for (int i = 0; i < points.length - 1; i++) {
       final p1 = points[i];
       final p2 = points[i + 1];
-
       if (p1 != null && p2 != null) {
         canvas.drawLine(p1, p2, paint);
       }
