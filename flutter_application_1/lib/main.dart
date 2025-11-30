@@ -85,7 +85,6 @@ class _SplashScreenState extends State<SplashScreen>
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // SZ FIXO
                 Image.asset(
                   'img/szsem.png',
                   height: 85, 

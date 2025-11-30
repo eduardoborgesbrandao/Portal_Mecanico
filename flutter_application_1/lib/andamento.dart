@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
-
 import 'classes/projeto.dart';
 import 'a_fazer.dart';
 import 'homologacao.dart';
 import 'maisdetalhes.dart';
 import 'perfil.dart';
-import 'login.dart'; // necessário para redirecionar se não houver email
+import 'login.dart'; 
 
 class Andamento extends StatefulWidget {
   final String? idInicial;
@@ -22,7 +21,6 @@ class _AndamentoState extends State<Andamento> {
   List<Projeto> _projetos = [];
   List<Projeto> _projetosFiltrados = [];
 
-  // raw JSON maps para busca global/sugestões
   List<Map<String, dynamic>> _todosProjetos = [];
   List<Map<String, dynamic>> _sugestoes = [];
 
@@ -38,7 +36,6 @@ class _AndamentoState extends State<Andamento> {
     _loadProjetos();
   }
 
-  // 🚨 NOVO — detectar se é mecânico
   bool get isMecanico {
     final cargo = (html.window.localStorage['cargo'] ?? '').toString();
     return cargo.toLowerCase() == 'mecanico';
@@ -144,10 +141,8 @@ class _AndamentoState extends State<Andamento> {
     final id = (item['idProjeto']?.toString() ?? '').trim();
     final status = (item['status']?.toString() ?? '').toUpperCase();
 
-    // 🚨 NOVO — MECÂNICO NÃO PODE IR PARA "A FAZER"
     if (status.contains("A FAZER")) {
       if (isMecanico) {
-        // Apenas limpa as sugestões e fica na tela atual
         setState(() => _sugestoes = []);
         return;
       }
@@ -270,25 +265,6 @@ class _AndamentoState extends State<Andamento> {
       );
     }
 
-    if (_vazio || _projetosFiltrados.isEmpty) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Nenhum projeto em andamento.',
-                    style: TextStyle(color: Colors.white)),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                    onPressed: _loadProjetos, child: const Text('Recarregar')),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
 
     _ajustarIndex();
     final p = _projetosFiltrados[_index];
@@ -465,12 +441,10 @@ class _AndamentoState extends State<Andamento> {
                     icon: const Icon(Icons.keyboard_arrow_up_outlined,
                         color: Colors.white),
                   ),
-                  // ---------- AQUI: passar o email do usuário logado  ----------
                   IconButton(
                     onPressed: () {
                       final email = (html.window.localStorage['emailLogado'] ?? '').toString();
                       if (email.isEmpty) {
-                        // sem email — volta para login
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (_) => const Login()),
@@ -484,7 +458,6 @@ class _AndamentoState extends State<Andamento> {
                     },
                     icon: const Icon(Icons.person, color: Colors.white, size: 26),
                   ),
-                  // ----------------------------------------------------------------
                   IconButton(
                     onPressed: () {
                       setState(() {

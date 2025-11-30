@@ -65,7 +65,6 @@ class _PerfilState extends State<Perfil> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              /// TOPO COM BOTÃO DE VOLTAR E LOGOUT
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -94,7 +93,6 @@ class _PerfilState extends State<Perfil> {
               const Icon(Icons.person, color: Colors.white, size: 70),
               const SizedBox(height: 8),
 
-              /// NOME COMPLETO DO JSON
               Text(
                 _func!['nomeFunc'],
                 style: const TextStyle(
@@ -104,7 +102,6 @@ class _PerfilState extends State<Perfil> {
                 ),
               ),
 
-              /// CARGO DO JSON
               Text(
                 _func!['cargo'].toString().toUpperCase(),
                 style: const TextStyle(color: Colors.grey),
@@ -112,7 +109,6 @@ class _PerfilState extends State<Perfil> {
 
               const SizedBox(height: 24),
 
-              /// INFORMAÇÕES DO PERFIL
               _info('NOME COMPLETO', _func!['nomeFunc']),
               _info('DATA DE NASCIMENTO', _func!['dataNasc']),
               _info('TELEFONE/WHATSAPP', _func!['telefone']),
@@ -123,7 +119,6 @@ class _PerfilState extends State<Perfil> {
 
               const SizedBox(height: 20),
 
-              /// AVALIAÇÃO DINÂMICA
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -145,7 +140,6 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
-  /// Builder para criar linhas de informações
   Widget _info(String titulo, String valor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -169,7 +163,7 @@ class _PerfilState extends State<Perfil> {
     );
   }
 
-  /// Estrelas de avaliação dinâmicas
+
   List<Widget> _buildStars(double rating) {
     List<Widget> stars = [];
 

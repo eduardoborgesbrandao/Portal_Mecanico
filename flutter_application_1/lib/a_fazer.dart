@@ -9,7 +9,7 @@
   import 'assinatura.dart';
 
   class AFazer extends StatefulWidget {
-    final String? idInicial; // aceita id opcional vindo da busca
+    final String? idInicial; 
 
     const AFazer({Key? key, this.idInicial}) : super(key: key);
 
@@ -20,8 +20,8 @@
   class _AFazerState extends State<AFazer> {
     List<Projeto> _projetos = [];
     List<Projeto> _projetosFiltrados = [];
-    List<Map<String, dynamic>> _todosProjetos = []; // raw JSON maps
-    List<Map<String, dynamic>> _sugestoes = []; // sugestões globais
+    List<Map<String, dynamic>> _todosProjetos = []; 
+    List<Map<String, dynamic>> _sugestoes = []; 
 
     bool _loading = true;
     bool _vazio = false;
@@ -62,13 +62,11 @@
             ? List.from(decoded['projetos'])
             : [];
 
-        // manter mapas originais
         _todosProjetos = lista.map<Map<String, dynamic>>((e) {
           if (e is Map) return Map<String, dynamic>.from(e);
           return <String, dynamic>{};
         }).toList();
 
-        // carregar model Projeto com proteção
         final loaded = lista.map((j) {
           try {
             return Projeto.fromJson(Map<String, dynamic>.from(j));
@@ -84,7 +82,6 @@
 
         _projetosFiltrados = List.from(_projetos);
 
-        // se veio idInicial, tenta posicionar ou redirecionar
         if (widget.idInicial != null && widget.idInicial!.trim().isNotEmpty) {
           final idNorm = widget.idInicial!.trim();
           final pos = _projetos.indexWhere((p) => p.idProjeto.toString().trim() == idNorm);
@@ -127,7 +124,6 @@
       }
     }
 
-    // busca global para sugerir (não altera a lista atual, apenas mostra sugestões)
     void _filtrar(String value) {
       final q = value.trim();
       if (q.isEmpty) {
@@ -168,11 +164,10 @@
         return;
       }
 
-      // fallback
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Seção desconhecida: ${item['status']}')));
     }
 
-    // abrir assinatura (mantido conforme seu código)
+
     Future<void> _abrirAssinatura(Projeto p, bool aprovado) async {
       final result = await Navigator.push(
         context,
@@ -250,7 +245,6 @@
       });
     }
 
-    // ao tocar em sugestão
     void _abrirSugestao(Map<String, dynamic> item) {
       setState(() => _sugestoes = []);
       _navigateToSection(item);
@@ -312,7 +306,6 @@
                     children: [
                       const SizedBox(height: 8),
 
-                      // barra e sugestões
                       SizedBox(width: 340, height: 36, child: _barraPesquisa()),
                       const SizedBox(height: 8),
                       if (_sugestoes.isNotEmpty)

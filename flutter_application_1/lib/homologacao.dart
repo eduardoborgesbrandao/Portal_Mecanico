@@ -114,7 +114,6 @@ class _HomologacaoState extends State<Homologacao> {
     }
   }
 
-  // busca global
   void _filtrar(String value) {
     final q = value.trim();
     if (q.isEmpty) {
@@ -137,7 +136,6 @@ class _HomologacaoState extends State<Homologacao> {
     });
   }
 
-  // assinatura final painter stuff (mantive sua lógica)
   Widget _campoAssinaturaFinal() {
     return Listener(
       onPointerDown: (details) {
@@ -446,11 +444,19 @@ class _HomologacaoState extends State<Homologacao> {
   }
 
   Widget _btnDetalhes(Projeto p) {
-    return SizedBox(width: 200, child: ElevatedButton(style: _btnStyle(), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Detalhes(idProjeto: p.idProjeto, modelo: p.modelo))), child: const Text("MAIS DETALHES", style: TextStyle(color: Colors.white))));
+    return SizedBox(width: 200, child: ElevatedButton
+    (style: _btnStyle(), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Detalhes
+    (idProjeto: p.idProjeto, modelo: p.modelo))), 
+    child: const Text("MAIS DETALHES", 
+    style: TextStyle(color: Colors.white))));
   }
 
   Widget _linha(String t, String v) {
-    return Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(t, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 13)), Text(v, style: const TextStyle(color: Colors.white, fontSize: 13))]));
+    return Padding(padding: const EdgeInsets.symmetric(vertical: 3), 
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+    children: [Text(t, style: const TextStyle
+    (color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 13)), 
+      Text(v, style: const TextStyle(color: Colors.white, fontSize: 13))]));
   }
 
   Widget _barraPesquisa() {
